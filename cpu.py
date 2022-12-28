@@ -1,27 +1,23 @@
+import asyncio
 import wmi
 import matplotlib.pyplot as plt
-import asyncio
-
-wmi_service = wmi.WMI()
-cpu_temps = []
 
 async def get_cpu_temp():
-    while True:
-        temp = wmi_service.Win32_TemperatureProbe()[0].CurrentReading
-        cpu_temps.append(temp)
-        await asyncio.sleep(1)
-
-async def plot_temp():
-    plt.ion()
-    fig, ax = plt.subplots()
-    while True:
-        ax.clear()
-        ax.plot(cpu_temps)
-        fig.canvas.draw()
-        await asyncio.sleep(1)
+    c = wmi.WMI(namespace="root\wmi")
+    temperature_info = c.MSAcpi_ThermalZoneTemperature()[0]
+    return temperature_info.CurrentTemperature
 
 async def main():
-    await asyncio.gather(get_cpu_temp(), plot_temp())
+    temperatures = []
+    while True:
+        temp = await get_cpu_temp()
+        temperatures.append(temp)
+        plt.plot(temperatures)
+        plt.show(block=False)
+        plt.pause(1)
 
-asyncio.run(main())
-plt.show()
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+
+
+
